@@ -13,17 +13,43 @@ type Config struct {
 	Username string `json:"current_user_name"`
 }
 
-func Read() Config {
-	// Get the HOME directory
+func getConfigFilePath() (string, error) {
 	homeDir, err := os.UserHomeDir()
-	  if err != nil {
-		  log.Fatal("Unable to get HOME directory:", err)
+	if err != nil {
+		return "", err
 	}
-	// Build full path to the file
-	filePath := filepath.Join(homeDir, "workspace/github.com/primawk/gator/gatorconfig.json")
+	return filepath.Join(homeDir, "workspace/github.com/primawk/gator/gatorconfig.json"), nil
+}
 
+func write(cfg Config) error {
+	path, err := getConfigFilePath()
+	if err != nil {
+		return err
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("could not create config file: %w", err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ") // optional pretty-print
+	if err := encoder.Encode(cfg); err != nil {
+		return fmt.Errorf("could not encode config to file: %w", err)
+	}
+
+	return nil
+}
+
+
+func Read() (Config, error){
+	path, err := getConfigFilePath()
+	if err != nil {
+		return Config{},fmt.Errorf("could not get config path: %w", err)
+	}
 	// Open the file
-	file, err := os.Open(filePath)
+	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal("Failed to open file:", err)
 	}
@@ -36,10 +62,13 @@ func Read() Config {
     }
 
 	fmt.Printf("Decoded Config: %+v\n", cfg)
-	return cfg
+	return cfg, nil
 }
 
-func (c Config) SetUser() string {
-
-    return p.FirstName + " " + p.LastName
+func (c *Config) SetUser(username string) error {
+	c.Username = username
+	if err := write(*c); err != nil {
+		return fmt.Errorf("failed to write config: %w", err)
+	}
+	return nil
 }

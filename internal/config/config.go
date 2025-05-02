@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 )
 
+const configFileName = ".gatorconfig.json"
+
 type Config struct {
  	Db_url string `json:"db_url"`
 	Username string `json:"current_user_name"`
@@ -18,7 +20,7 @@ func getConfigFilePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(homeDir, "workspace/github.com/primawk/gator/gatorconfig.json"), nil
+	return filepath.Join(homeDir, configFileName), nil
 }
 
 func write(cfg Config) error {
